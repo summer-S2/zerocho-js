@@ -1,0 +1,142 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>숫자야구</title>
+</head>
+<body>
+ <!-- # 숫자야구 규칙
+ 1. 랜덤으로 1~10까지 숫자 중 겹치지 않는 4개의 숫자가 선정된다. (숫자는 비공개)
+ 2. 사용자는 한번에 4개씩 숫자를 입력한다.
+ 3. 선정된 숫자와 자리가 사용자가 입력한것과 같으면 스트라이크, 숫자만 같고 자리가 다르면 볼, 숫자와 자리가 모두 다르면 아웃
+ 4. 기회는 총 10번이다.
+ 5. 10번 이내에 사용자가 4가지 숫자와 자리를 모두 맞추면 홈런! 
+ ex > 랜덤 숫자 (3, 6, 7, 2) 
+      사용자 입력값 (3, 9, 1, 4) : 1 스트라이크
+      사용자 입력값 (3, 9, 1, 2) : 2 스트라이크
+      사용자 입력값 (6, 2, 3, 8) : 3 볼
+      사용자 입력값 (9, 1, 4, 8) : 아웃
+      사용자 입력값 (3, 6, 7, 2) : 홈런 -->
+
+<form id="form">
+    <p id="message">숫자를 입력하세요</p>
+    <input type="text" id="input">
+    <button>확인</button>
+</form>
+<div id="logs"></div>
+
+<script>
+    const $input = document.querySelector('#input');
+    const $form = document.querySelector('#form');
+    const $logs = document.querySelector('#logs');
+    const $message = document.querySelector('#message');
+    let out = 0;
+
+    // 숫자 랜덤 생성
+    // const numbers = [];
+    // for (let i=0; i<9; i++){
+    //     numbers.push(i+1);
+    // }
+    const numbers = Array(9).fill(0).map((element, index) => {
+        return index + 1;
+    })
+    console.log(numbers);
+    const answer = [];
+    for (let i=0; i<4; i++){ // 네 번 반복
+        const index = Math.floor(Math.random() * (numbers.length)) // 0~8 정수
+        answer.push(numbers[index]);
+        numbers.splice(index, 1); // 뽑힌거 뺴줌
+    }
+    console.log(answer);
+
+    const tries = [];
+
+    // 검사하는 코드
+    function checkInput(input){
+        if(input.length !== 4) { // 글자수 확인
+            $message.textContent = '4자리 숫자를 입력해 주세요.';
+            return false;
+        }
+        if(new Set(input).size !== 4) { // 중복숫자 확인
+            $message.textContent = '중복되지 않게 입력해 주세요.';
+            return false;
+        }
+        if(tries.includes(input)) { // 중복값 확인
+            $message.textContent = '이미 시도한 값입니다.';
+            return false;
+        }
+
+        return true;
+    }
+    // 실패 코드
+    function defeat() {
+        const lose = document.createTextNode(`패배! 정답은 ${answer.join('')}`)
+            $logs.appendChild(lose);
+    }
+
+    $form.addEventListener('submit', (event) => {
+        event.preventDefault(); // 기본동작막기 (새로고침x)
+        const value = $input.value;
+        $input.value = '';
+        const valid = checkInput(value);
+        if (!valid) {
+            return; 
+        }
+        // 스트라이크, 볼 검사
+        let strike = 0;
+        let ball = 0;
+        for (let i=0; i<answer.length; i++) {
+            const index = value.indexOf(answer[i]); // value에서answer[i]가 등장하는 index값을 리턴
+            if (index > -1) { // 일치하는 숫자 발견
+                if (index === i) { // 자릿수도 같음
+                    strike += 1;
+                } else { // 숫자만 같음
+                    ball += 1;
+                }
+            }
+        }
+    
+        
+        // 입력값 문제 없음
+        if (answer.join('') === value) {
+            $log.textContent = '홈런!';
+            return;
+        }
+        if (tries.length >= 9 || out >= 2) {
+            defeat();
+            return;
+        }
+        
+        tries.push(value);
+        console.log(tries);
+
+        if (strike === 0 && ball === 0) {
+            out += 1;
+            $logs.append(`${value}: ${out} 아웃 , 남은 횟수 : ${10 - (tries.length)} / 남은 아웃 : ${3 - (out)}`, document.createElement('br'));
+        } else {
+            $logs.append(`${value}: ${strike} 스트라이크 / ${ball} 볼 / ${out} 아웃 , 남은 횟수 : ${10 - (tries.length)} / 남은 아웃 : ${3 - (out)}`, document.createElement('br'));
+        }
+
+        
+
+        
+    });
+
+    /*
+    indexOf와 includes 비교
+    '2345'.indexOf(3) === 1;
+    '2345'.includes(3) === true;
+
+     *주의 : 요소의 자료형까지 같아야 함
+     ['2', '3', '4', '5'].indexOf('5') === 3;
+     ['2', '3', '4', '5'].indexOf(5) === -1;
+     ['2', '3', '4', '5'].includes(5) === false;
+    */
+
+
+</script>
+    
+</body>
+</html>

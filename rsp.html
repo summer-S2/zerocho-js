@@ -1,0 +1,135 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>가위바위보</title>
+    <style>
+        #computer {
+            width: 142px;
+            height: 200px;
+            margin-bottom: 1rem;
+        }
+        button {
+            cursor: pointer;
+            padding: 0.5rem;
+            border: none;
+            background-color: black;
+            color: white;
+            width: 45px;
+        }
+        button:hover {
+            opacity: 0.5;
+        }
+        .btns {
+            margin-bottom: 1rem;
+        }
+    </style>
+</head>
+<body>
+    <div id="computer"></div>
+    <div class="btns">
+        <button id="scissors" class="btn">가위</button>
+        <button id="rock" class="btn">바위</button>
+        <button id="paper" class="btn">보</button>
+    </div>
+    <div id="score">0</div>
+
+    <script>
+        const $computer = document.querySelector('#computer');
+        const $score = document.querySelector('#score');
+        const $rock = document.querySelector('#rock');
+        const $scissors = document.querySelector('#scissors');
+        const $paper = document.querySelector('#paper');
+        const IMG_URL = './rsp.png';
+        $computer.style.background = `url(${IMG_URL}) 0 0`; // 숫자: 이미지의 가로위치, 세로위치
+        $computer.style.backgroundSize = 'auto 200px'; 
+
+        
+        // 가위 바위 보 x좌표
+        const rspX = {
+            scissors: '0', // 가위의 x좌표
+            rock: '-231px', // 바위의 x좌표
+            paper: '-442px', // 보의 x좌표
+        }
+
+        // 화면에 표시되는 이미지 바꾸기
+        let computerChoice = 'scissors';
+        const changeComputerHand = () => {
+            if (computerChoice === 'scissors') { // 가위
+                computerChoice = 'rock';
+            } else if (computerChoice === 'rock') { //바위
+                computerChoice = 'paper';
+            } else if (computerChoice = 'paper') { //보
+                computerChoice = 'scissors';
+            }
+            $computer.style.background = `url(${IMG_URL}) ${rspX[computerChoice]} 0`;
+            $computer.style.backgroundSize = 'auto 200px'; 
+        }
+        let intervalId = setInterval(changeComputerHand ,50);
+
+
+        const scoreTable = {
+            rock: 0,
+            scissors: 1,
+            paper: -1,
+        };
+
+        let clickable = true;
+        let me = 0;
+        let computer = 0;
+        const clickButton = () => {
+            if (clickable){
+                clearInterval(intervalId); // setInterval 함수 삭제
+                clickable = false;
+
+                // 점수 계산 및 화면 표시
+                const myChoice = event.target.textContent === '바위'
+                    ? 'rock'
+                    :event.target.textContent === '가위'
+                        ? 'scissors'
+                        : 'paper';
+                
+                const myScore = scoreTable[myChoice];
+                const computerScore = scoreTable[computerChoice];
+                const diff = myScore - computerScore
+
+                let message;
+                // 2,-1은 승리조건이고 -2,1은 패배조건
+                if ([2,-1].includes(diff)){ //diff === 2 || diff === -1
+                    me += 1
+                    message = '이겼습니다.';
+                } else if ([-2, 1].includes(diff)) { //diff === -2 || diff === 1
+                    computer += 1
+                    message = '졌습니다.';
+                } else {
+                    message = '무승부';
+                }
+                
+                // 5판 3선승제
+                if (me >= 3) {
+                    $score.textContent = `player 승리!  내 점수: ${me}점 vs 컴퓨터 점수: ${computer}점`;
+                    me = 0;
+                    computer = 0;
+                } else if (computer >= 3) {
+                    $score.textContent = `player 패배!  내 점수: ${me}점 vs 컴퓨터 점수: ${computer}점`;
+                    me = 0;
+                    computer = 0;
+                } else {
+                    $score.textContent = `${message}  내 점수: ${me}점 vs 컴퓨터 점수: ${computer}점`;
+                    setTimeout(() => {
+                        clickable = true;
+                        intervalId = setInterval(changeComputerHand ,50);
+                    }, 2000);
+                }
+            }
+        };
+
+
+        $rock.addEventListener('click', clickButton);
+        $scissors.addEventListener('click', clickButton);
+        $paper.addEventListener('click', clickButton);
+    </script>
+</body>
+</html>

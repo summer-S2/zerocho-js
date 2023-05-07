@@ -1,0 +1,227 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>짝 맞추기</title>
+</head>
+<style>
+  *{box-sizing: border-box;}
+  .hidden {
+    display: none;
+  }
+  form {
+    width: 300px;
+    height: 300px;
+    margin: auto;
+    margin-top: 50px;
+  }
+  button {
+    display: block;
+    width: 100px;
+    height: 30px;
+    margin: auto;
+    margin-bottom: 10px;
+    cursor: pointer;
+  }
+  #wrapper {
+    width: 320px;
+    margin: auto;
+  }
+  .card {
+    display: inline-block;
+    margin-right: 10px;
+    margin-bottom: 20px;
+    width: 70px;
+    height: 100px;
+    perspective: 140px;
+    cursor: pointer;
+  }
+  .card-inner {
+    position: relative;
+    width: 100%;
+    height: 100%;
+    text-align: center;
+    transition: transform 0.8s;
+    transform-style: preserve-3d;
+  }
+  .card.flipped .card-inner {
+    transform: rotateY(180deg);
+  }
+  .card-front {
+    /* background: navy; */
+    background: #495C83;
+  }
+  .card-front, .card-back {
+    position: absolute;
+    width: 100%;
+    height: 100%;
+    border: 1px solid black;
+    backface-visibility: hidden; /*뒷면 안보이게*/
+  }
+  .card-back {
+    transform: rotateY(180deg);
+  }
+</style>
+<body>
+  <div id="container">
+    <form id="lev-btns">
+      <button id="lev1" type="button">초급</button>
+      <button id="lev2" type="button">중급</button>
+      <button id="lev3" type="button">상급</button>
+    </form>
+    <div id="wrapper"></div>
+  </div>
+
+<script>
+  const $wrapper = document.querySelector('#wrapper');
+  const $lev1 = document.querySelector('#lev1');
+  const $lev2 = document.querySelector('#lev2');
+  const $lev3 = document.querySelector('#lev3');
+  const $form = document.querySelector('form');
+
+  const colors = ['#b24328', '#f16745', '#ffc65d', '#ccc665', '#7bc8a4', '#4ab7d9', '#448ccb', '#7a4c74', '#828282', '#FFF'];
+  let total;
+  let colorSlice = [];
+  let colorCopy = [];
+  let shuffled = []; // 섞인 카드 담는 변수
+  let clicked = []; // 클릭한 카드 담는 변수
+  let completed = []; // 짝이 맞은 카드들 담는 변수
+  let clickable = false; // 클릭버그 방지 변수
+  let startTime;
+
+  $lev1.addEventListener('click', (e) => {
+    total = 8;
+    $form.classList.add('hidden');
+    // $wrapper.style.width = '400px';
+    startGame(total);
+  })
+  $lev2.addEventListener('click', (e) => {
+    total = 12;
+    $form.classList.add('hidden');
+    // $wrapper.style.width = '400px';
+    startGame(total);
+  })
+  $lev3.addEventListener('click', (e) => {
+    total = 20;
+    $form.classList.add('hidden');
+    // $wrapper.style.width = '500px';
+    startGame(total);
+  })
+
+  // 카드 섞는 함수
+  function shuffle() { // 피셔 예이츠 셔플
+    for (let i=0; colorCopy.length > 0; i++) {
+      const randomIndex = Math.floor(Math.random() * colorCopy.length);
+      shuffled = shuffled.concat(colorCopy.splice(randomIndex, 1));
+    //   또는
+    //   const spliced = colorCopy.splice(randomIndex, 1);
+    //   shuffled.push(spliced[0]);
+    }
+  }
+
+  // 카드 생성 함수
+  function createCard(i) { // div.card > div.card-inner > (div.card-front + div.card-back)
+    const card = document.createElement('div');
+    card.className = 'card'; // .card 태그 생성
+    const cardInner = document.createElement('div');
+    cardInner.className = 'card-inner'; // .card-inner 태그 생성
+    const cardFront = document.createElement('div');
+    cardFront.className = 'card-front'; // .card-front 태그 생성
+    const cardBack = document.createElement('div');
+    cardBack.className = 'card-back'; // .card-back 태그 생성
+    cardBack.style.backgroundColor = shuffled[i]; // 랜덤으로 섞은 컬러
+    cardInner.appendChild(cardFront);
+    cardInner.appendChild(cardBack);
+    card.appendChild(cardInner);
+    return card;
+  }
+
+  function onClickCard() { // card.addEventListener에 function이면 this는 card
+    // console.log(this); // 클릭한 card
+    console.log(total);
+    if (!clickable || completed.includes(this) || clicked[0] === this) {
+      return; // clickable = false, 또는 완성된 카드에 포함된 카드, 또는 이미 클릭된 카드를 클릭할 수 없게 리턴
+    }
+    this.classList.toggle('flipped');
+    clicked.push(this);
+    if (clicked.length !== 2) {
+      return;
+    }
+    // querySelector는 연달아 사용 가능.
+    const firstBackColor = clicked[0].querySelector('.card-back').style.backgroundColor; // .card안의 .card-back의 backgroundcolor
+    const secondBackColor = clicked[1].querySelector('.card-back').style.backgroundColor;
+
+    // 두 카드가 같으면
+    if (firstBackColor === secondBackColor) { 
+      completed.push(clicked[0]); // 완료 변수에 넣기
+      completed.push(clicked[1]);
+      clicked = [];   
+      // 또는 completed = completed.concat(clicked);
+      if (completed.length !== total) {
+        return
+      }
+
+      // 모든 카드가 뒤집히면
+      const endTime = new Date(); // 종료 시간 측정
+      setTimeout(() => { // 맨 마지막 카드가 뒤집히기 전에 alert하는것을 방지
+        alert(`축하합니다! ${(endTime - startTime) / 1000}초 걸렸습니다.`);
+        resetGame();
+        $form.classList.remove('hidden');
+      }, 500)
+      return;
+    }
+
+    // 두 카드가 다르면
+    clickable = false; // 카드를 연달아 클릭했을때 3번째 이후 카드가 되돌아오지 않는 버그 방지
+    setTimeout(() => { // 두번째 카드가 뒤집히지 않는 버그를 수정하는 함수
+      clicked[0].classList.remove('flipped');
+      clicked[1].classList.remove('flipped');
+      clicked = [];
+      clickable = true;
+    }, 500);
+  }
+  
+  // 게임 시작 함수
+  function startGame(total) {
+    clickable = false;
+    colorSlice = colors.slice(0, total/2);
+    colorCopy = colorSlice.concat(colorSlice); 
+    shuffle();
+    for (let i=0; i<total; i++) {
+      const card = createCard(i);
+      card.addEventListener('click', onClickCard); // 카드 1개 만들때마다 이벤트 생성(버블링으로 wrapper에 이벤트 생성하면 빈공간을 클릭해도 이벤트가 발생하므로 이 경우에는 카드마다 이벤트를 만들어줌.)
+      $wrapper.appendChild(card); // wrapper안에 12장의 card 생성
+    }
+    
+    // 초반 카드 공개
+    document.querySelectorAll('.card').forEach((card, index) => { 
+      setTimeout(()=> {
+        card.classList.add('flipped');
+      }, 100 * index); //첫번째카드-0.1초, 두번째카드-0.2초, 세번째카드-0.3초 ... 마지막카드-1.2초
+    });
+
+    // 카드 감추기
+    setTimeout(() => { 
+      document.querySelectorAll('.card').forEach((card) => {
+        card.classList.remove('flipped');
+      });
+      clickable = true;
+      startTime = new Date(); // 카드 감추고 시작시간 측정
+    }, 4000); // 4초뒤에 카드 감춤
+  }
+
+  // startGame();
+
+  // 게임 새로 시작
+  function resetGame() {
+    $wrapper.innerHTML = '';
+    shuffled = [];
+    completed = [];
+  }
+
+ 
+</script>
+</body>
+</html>

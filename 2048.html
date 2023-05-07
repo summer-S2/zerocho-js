@@ -1,0 +1,268 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta http-equiv="X-UA-Compatible" content="IE=edge">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>2048</title>
+</head>
+<style>
+  #table { border-collapse: collapse; user-select: none; } /* user-select: none; : 드래그 방지*/
+  #table td {
+    border: 10px solid #bbada0; width: 116px; height: 128px;
+    font-size: 50px; font-weight: bold; text-align: center;
+  }
+  #score { user-select: none; }
+  .color-2 { background-color: #eee4da; color: #776e65;}
+  .color-4 { background-color: #eee1c9; color: #776e65;}
+  .color-8 { background-color: #f3b27a; color: 'white';}
+  .color-16 { background-color: #f69664; color: 'white';}
+  .color-32 { background-color: #f77c5f; color: 'white';}
+  .color-64 { background-color: #f75f3b; color: 'white';}
+  .color-128 { background-color: #edd073; color: #776e65;}
+  .color-256 { background-color: #edcc62; color: #776e65;}
+  .color-512 { background-color: #edc950; color: #776e65;}
+  .color-1024 { background-color: #edc53f; color: #776e65;}
+  .color-2048 { background-color: #edc22e; color: #776e65;}
+</style>
+<body>
+<table id="table"></table>
+<div>
+  <div id="score">0</div>
+  <button id="back">되돌리기</button>
+</div>
+
+
+<script>
+  const $table = document.getElementById('table');
+  const $score = document.getElementById('score');
+  const $back = document.querySelector('#back');
+  let data = []; // 4*4 table
+  const history = [];
+
+  $back.addEventListener('click', () => {
+    const prevData = history.pop();
+    if (!prevData) return; //되돌릴게 없으면 종료
+    $score.textContent = prevData.score;
+    data = prevData.table;
+    draw();
+  })
+
+  // 게임 시작 함수
+  function startGame() {
+    // $table -> $fragment -> $tr -> $td
+    const $fragment = document.createDocumentFragment(); // fragment : tr안에 td를 넣는 과정을 fragment에 저장. fragment는 데이터를 메모리에 저장했다가 forEach반복문이 끝나면 table에 들어가면서 화면을 1번만 띄워주면 됨 (성능이 좋아짐)
+    [1, 2, 3, 4].forEach(function () {
+      const rowData = [];
+      data.push(rowData);
+      const $tr = document.createElement('tr');
+      [1, 2, 3, 4].forEach(() => {
+        rowData.push(0);
+        const $td = document.createElement('td');
+        $tr.appendChild($td);
+      });
+      $fragment.appendChild($tr);
+    });
+    $table.appendChild($fragment);
+    put2toRandomCell();
+    draw();
+  }
+
+  // 랜덤한 빈칸에 숫자2를 넣는 함수
+  function put2toRandomCell() {
+    const emptyCells = []; //[[i1, j1], [i2, j2], [i3, j3], ...]
+    data.forEach(function (rowData, i) {
+      rowData.forEach(function (cellData, j) {
+        if (!cellData) { // 셀데이터가 없으면
+          emptyCells.push([i, j]); // 빈칸들이 몇번째줄i, 몇번째칸j인지 모음
+        }
+      });
+    });
+    // randomCell === [i, j]
+    const randomCell = emptyCells[Math.floor(Math.random() * emptyCells.length)];
+    data[randomCell[0]][randomCell[1]] = 2;
+  }
+
+  // data를 토대로 화면을 그리는 함수
+  function draw() {
+    data.forEach((rowData, i) => {
+      rowData.forEach((cellData, j) => {
+        const $target = $table.children[i].children[j];
+        if(cellData > 0) {
+          $target.textContent = cellData;
+          $target.className = 'color-' + cellData;
+        } else {
+          $target.textContent = '';
+          $target.className = '';
+        }
+      });
+    });
+  }
+
+  startGame();
+
+  // data = [ // 테스트데이터
+  //   [2, 2, 4, 2],
+  //   [4, 4, 32, 16],
+  //   [2, 2, 4, 8],
+  //   [32, 16, 1024, 1024],
+  // ];
+  // draw();
+
+  function moveCells(direction) {
+    history.push({
+      table: JSON.parse(JSON.stringify(data)), //깊은복사
+      score: $score.textContent,
+    });
+
+    switch (direction) {
+      case 'left':{
+        const newData = [[], [], [], []]; 
+        data.forEach((rowData, i) => { // [[2,4,2],[8],[2,2,2,2],[16,4]] 빈칸 제외하고 newData에 넣음
+          rowData.forEach((cellData, j) => {
+            if (cellData) { 
+              const currentRow = newData[i]; // 지금 줄
+              const prevData = currentRow[currentRow.length -1]; // 이전값
+              if (prevData === cellData) { // 이전 값과 지금 값이 같으면
+                const score = parseInt($score.textContent);
+                $score.textContent = score + currentRow[currentRow.length - 1 ] * 2
+                currentRow[currentRow.length -1] *= -2; // 뒤에 값과 합쳐지는것을 방지
+              } else {
+                newData[i].push(cellData); 
+              }
+            }
+          });
+        });
+        console.log(newData);
+        [1, 2, 3, 4].forEach((rowData, i) => {
+          [1, 2, 3, 4].forEach((cellData, j) => {
+            data[i][j] = Math.abs(newData[i][j]) || 0; // 원본데이터 수정 절대값으로 변경
+          });
+        });
+        break;
+      }
+      case 'right': {
+        const newData = [[], [], [], []];
+        data.forEach((rowData, i) => {
+          rowData.forEach((cellData, j) => {
+            if (rowData[3 - j]) { //3->2->1->0 오른쪽에서 왼쪽으로 
+              const currentRow = newData[i]; // 지금 줄
+              const prevData = currentRow[currentRow.length -1]; // 이전값
+              if (prevData === rowData[3 - j]) { // 이전 값과 지금 값이 같으면
+                const score = parseInt($score.textContent);
+                $score.textContent = score + currentRow[currentRow.length - 1 ] * 2
+                currentRow[currentRow.length - 1] *= -2; // 뒤에 값과 합쳐지는것을 방지
+              } else {
+                newData[i].push(rowData[3 - j]); //  빈칸 제외하고 newData에 넣음 [[2,4,2],[8],[2,2,2,2],[16,4]]
+              }
+            }
+          });
+        });
+        console.log(newData);
+        [1, 2, 3, 4].forEach((rowData, i) => {
+          [1, 2, 3, 4].forEach((cellData, j) => {
+            data[i][3 - j] = Math.abs(newData[i][j]) || 0; // 원본데이터 수정 절대값으로 변경
+          });
+        });
+        break;
+      }
+      case 'up': {
+        const newData = [[2,4,2,32], [2,4,2,16], [4,32,4,1024], [2,16,8,1024]];
+        data.forEach((rowData, i) => { 
+          rowData.forEach((cellData, j) => {
+            if (cellData) { 
+              const currentRow = newData[j]; // 지금 줄
+              const prevData = currentRow[currentRow.length -1]; // 이전값
+              if (prevData === cellData) { // 이전 값과 지금 값이 같으면
+                const score = parseInt($score.textContent);
+                $score.textContent = score + currentRow[currentRow.length - 1 ] * 2
+                currentRow[currentRow.length - 1] *= -2; // 뒤에 값과 합쳐지는것을 방지
+              } else {
+                newData[j].push(cellData); 
+              }
+            }
+          });
+        });
+        console.log(newData);
+        [1, 2, 3, 4].forEach((cellData, i) => {
+          [1, 2, 3, 4].forEach((rowData, j) => {
+            data[j][i] = Math.abs(newData[i][j]) || 0; // 원본데이터 수정 절대값으로 변경
+          });
+        });
+        break
+      }
+      case 'down': {
+        const newData = [[], [], [], []];
+        data.forEach((rowData, i) => {
+          rowData.forEach((cellData, j) => {
+            if (data[3-i][j]) { 
+              const currentRow = newData[j]; // 지금 줄
+              const prevData = currentRow[currentRow.length -1]; // 이전값
+              if (prevData === data[3-i][j]) { // 이전 값과 지금 값이 같으면
+                const score = parseInt($score.textContent);
+                $score.textContent = score + currentRow[currentRow.length - 1 ] * 2
+                currentRow[currentRow.length - 1] *= -2; // 뒤에 값과 합쳐지는것을 방지
+              } else {
+                newData[j].push(data[3-i][j]); 
+              }
+            }
+          });
+        });
+        console.log(newData);
+        [1, 2, 3, 4].forEach((cellData, i) => {
+          [1, 2, 3, 4].forEach((rowData, j) => {
+            data[3-j][i] = Math.abs(newData[i][j]) || 0; // 원본데이터 수정 절대값으로 변경
+          });
+        });
+        break
+      }
+    }
+   if (data.flat().includes(2048)) {
+    draw();
+    setTimeout(() => {
+      alert('축하합니다. 2048을 만들었습니다!');
+    }, 100);
+   } else if (!data.flat().includes(0)) {
+    alert('패배했습니다...');
+   } else {
+    put2toRandomCell();
+    draw();
+   }
+  }
+
+  // 키보드
+  window.addEventListener('keyup', (event) => { // 키보드를 뗀 순간
+    if (event.key === 'ArrowUp') {
+      moveCells('up');
+    } else if (event.key === 'ArrowDown') {
+      moveCells('down');
+    } else if (event.key === 'ArrowLeft') {
+      moveCells('left');
+    } else if (event.key === 'ArrowRight') {
+      moveCells('right');
+    }
+  });
+
+  // 마우스
+  let startCoord;
+  window.addEventListener('mousedown', (event) => { // 마우스를 눌렀을때 좌표 기록
+    startCoord = [event.clientX, event.clientY]; // client: 화면 좌측맨위 기준
+  })
+  window.addEventListener('mouseup', (event) => { // 마우스를 뗐을 때 
+    const endCoord = [event.clientX, event.clientY];
+    const diffX = endCoord[0] - startCoord[0];
+    const diffY = endCoord[1] - startCoord[1];
+    if (diffX < 0 && Math.abs(diffX) > Math.abs(diffY)) { // (-x면 왼쪽) & (x의 절대값이 y보다 큼) (y가 크면 위아래)
+      moveCells('left');
+    } else if (diffX > 0 && Math.abs(diffX) > Math.abs(diffY)) { // (+x) & x > y
+      moveCells('right');
+    } else if (diffY > 0 && Math.abs(diffX) <= Math.abs(diffY)) { // (+y) & x <= y
+      moveCells('down');
+    } else if (diffY < 0 && Math.abs(diffX) <= Math.abs(diffY)) { // (-y) & x <= y
+      moveCells('up');
+    }
+  });
+</script>
+    
+</body>
+</html>

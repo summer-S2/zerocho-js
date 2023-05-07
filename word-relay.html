@@ -1,0 +1,76 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta http-equiv="X-UA-Compatible" content="IE=edge">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>끝말잇기</title>
+</head>
+
+
+<body>
+
+
+<div><span id="order">1</span>번째 참가자</div>
+<div>제시어: <span id="word"></span></div>
+<input type="text">
+<button>입력</button>
+<p style="color: red;"></p>
+
+
+
+<script>
+  // 참가자 수 입력받기 
+  // prompt로 입력받은 값이 문자열이기 때문에 parseInt로 감싸줌
+  const number = parseInt(prompt('몇 명이 참가하나요?'), 10);
+  
+  // 경고 메시지
+  alert('입력하신 숫자는 ' + number + '명 입니다.');
+
+  // Yes/No 값 입력받기 bool값으로..
+  confirm(number + '명이 맞습니까?');
+  
+  const $order = document.querySelector('#order');
+  const input = document.querySelector('input');
+  const button = document.querySelector('button');
+  const $word = document.querySelector('#word');
+  const p = document.querySelector('p');
+  let word;
+  let newWord;
+
+  button.addEventListener('click', () => {
+    if (input.value === '') {
+      p.textContent = '단어를 입력해주세요.'
+    }
+    if (!word || word[word.length -1] === newWord[0]) {
+      word = newWord;
+      $word.textContent = word; // 제시어 옆에 단어 추가
+      input.value = '';
+      p.textContent = '';
+
+      // 순서 변경
+      const order = Number($order.textContent);
+      if (order + 1 > number) {
+        $order.textContent = 1;
+      } else {
+        $order.textContent = order + 1;
+      }
+    } else {
+      p.textContent = '틀렸습니다. 단어를 다시 입력해주세요.';
+      input.value = '';
+    }
+
+  })
+  
+  input.addEventListener('input', (event) => {
+    newWord = event.target.value;
+    console.log(event.target.value);
+  })
+
+</script>
+
+    
+</body>
+
+
+</html>
